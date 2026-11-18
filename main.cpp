@@ -1,77 +1,191 @@
 #include <iostream>
+#include <cstdlib>
 #include "bowling_frame.h"
-#include <random>
 
 using namespace std;
 
-std::random_device dev_main;
-std::mt19937 rng_main(dev_main());
 
+// Adds the score from every frame in one player's game
 int current_game_total(Bowling_Frame * first_frame)
 {
-	Bowling_Frame * temp = first_frame;
-	int game_total = 0;
-	int temp_total = 0;
-	while(temp)
-	{
-		game_total += temp->frame_score();
-		temp = temp->next_frame();
-	}
-	return game_total;	
+    Bowling_Frame * temp = first_frame;
+    int game_total = 0;
+
+    while (temp != nullptr)
+    {
+        game_total += temp->frame_score();
+        temp = temp->next_frame();
+    }
+
+    return game_total;
 }
 
-int main()
+
+int main(int argc, char * argv[])
 {
-	//make frames
-	Bowling_Frame * f1 = new Bowling_Frame(1);
-	Bowling_Frame * f2 = new Bowling_Frame(2);
-	Bowling_Frame * f3 = new Bowling_Frame(3);
+    // ==========================================
+    // CHECK COMMAND-LINE ARGUMENT
+    // ==========================================
 
-	//link frames together
-	f1->next_frame(f2);
+    if (argc != 2)
+    {
+        cout << "Usage: ./a.out <num_players>" << endl;
+        return 1;
+    }
 
-	f2->next_frame(f3);
-	f2->prev_frame(f1);
+    int num_players = atoi(argv[1]);
 
-	f3->prev_frame(f2);	
+    if (num_players <= 0)
+    {
+        cout << "Number of players must be greater than 0." << endl;
+        return 1;
+    }
 
-	//set frame scores	
-	f1->update_scores();
-	f1->update_scores();
-	cout << "Frame 1 Total: " << current_game_total(f1) << endl;
-
-	f1->update_scores();
-	f1->update_scores();
-	cout << "Frame 1 and 2 Total: " << current_game_total(f1) << endl;
+    cout << "Player count is: " << num_players << endl;
 
 
-	f1->update_scores();
-	f1->update_scores();
-	cout << "Frame 1,2,and 3 Total: " << current_game_total(f1) << endl;
+    // ==========================================
+    // CREATE ARRAY OF PLAYER FRAME POINTERS
+    // ==========================================
 
-	//print values
-	cout << "Frame " << f1->frame_num() << ": " << endl
-		 << " Score 1: " << f1->score1() << endl
-		 << " Score 2: " << f1->score2() << endl;
+    Bowling_Frame ** players =
+        new Bowling_Frame*[num_players];
 
-	cout << "Frame " << f2->frame_num() << ": " << endl
-	     << " Score 1: " << f2->score1() << endl
-		 << " Score 2: " << f2->score2() << endl;
 
-	cout << "Frame " << f3->frame_num() << ": " << endl
-	     << " Score 1: " << f3->score1() << endl
-		 << " Score 2: " << f3->score2() << endl;
+    // ==========================================
+    // CREATE 10 FRAMES FOR EACH PLAYER
+    // ==========================================
 
-	//iterate through linked list and print values
-	Bowling_Frame * traverse = f1;
-	
-	while(traverse)
-	{
-		cout << "Frame " << traverse->frame_num() << ": " << endl
-		 	 << " Score 1: " << traverse->score1() << endl
-		 	 << " Score 2: " << traverse->score2() << endl;
+    for (int i = 0; i < num_players; i++)
+    {
+        // First frame for this player
+        players[i] = new Bowling_Frame(1);
 
-		traverse = traverse->next_frame();
-	}
+        Bowling_Frame * current = players[i];
 
+        // Create frames 2 through 10
+        for (int frame_num = 2; frame_num <= 10; frame_num++)
+        {
+            Bowling_Frame * new_frame =
+                new Bowling_Frame(frame_num);
+
+            // Link current frame forward
+            current->next_frame(new_frame);
+
+            // Link new frame backward
+            new_frame->prev_frame(current);
+
+            // Move forward
+            current = new_frame;
+        }
+    }
+
+
+    // ==========================================
+    // POPULATE SCORES
+    // ==========================================
+
+    for (int i = 0; i < num_players; i++)
+    {
+        Bowling_Frame * current = players[i];
+
+        while (current != nullptr)
+        {
+            // First roll
+            current->update_scores();
+
+            // Second roll
+            current->update_scores();
+
+            // Frame 10 may need a third roll
+            if (current->frame_num() == 10)
+            {
+                if (current->strike() || current->spare())
+                {
+                    current->update_scores();
+                }
+            }
+
+            current = current->next_frame();
+        }
+    }
+
+
+    // ==========================================
+    // RECALCULATE STRIKE/SPARE BONUSES
+    // ==========================================
+
+    // Earlier frames need the later frame scores
+    // before their bonus can be calculated.
+    for (int i = 0; i < num_players; i++)
+    {
+        Bowling_Frame * current = players[i];
+
+        while (current != nullptr)
+        {
+            current->update_scores();
+            current = current->next_frame();
+        }
+    }
+
+
+    // ==========================================
+    // PRINT EACH PLAYER'S GAME
+    // ==========================================
+
+    for (int i = 0; i < num_players; i++)
+    {
+        Bowling_Frame * current = players[i];
+
+        while (current != nullptr)
+        {
+            cout << "Frame "
+                 << current->frame_num()
+                 << ":" << endl;
+
+            cout << " Score 1: "
+                 << current->score1()
+                 << endl;
+
+            cout << " Score 2: "
+                 << current->score2()
+                 << endl;
+
+            current = current->next_frame();
+        }
+
+        cout << endl;
+
+        cout << "Total Game Score for player "
+             << i + 1
+             << ": "
+             << current_game_total(players[i])
+             << endl;
+
+        cout << endl;
+    }
+
+
+    // ==========================================
+    // DELETE ALL FRAMES
+    // ==========================================
+
+    for (int i = 0; i < num_players; i++)
+    {
+        Bowling_Frame * current = players[i];
+
+        while (current != nullptr)
+        {
+            Bowling_Frame * next = current->next_frame();
+
+            delete current;
+
+            current = next;
+        }
+    }
+
+    delete [] players;
+
+
+    return 0;
 }
