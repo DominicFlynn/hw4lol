@@ -77,7 +77,7 @@ int main(int argc, char * argv[])
             Bowling_Frame * new_frame =
                 new Bowling_Frame(frame_num);
 
-
+            
             // Link current frame to next frame
             current->next_frame(new_frame);
 
@@ -155,8 +155,7 @@ int main(int argc, char * argv[])
 
     for (int i = 0; i < num_players; i++)
     {
-        cout << "Player " << i + 1 << ":" << endl;
-        cout << endl;
+        
 
 
         Bowling_Frame * current = players[i];
@@ -176,9 +175,7 @@ int main(int argc, char * argv[])
                  << current->score2()
                  << endl;
 
-            cout << "  Frame Score: "
-                 << current->frame_score()
-                 << endl;
+           
 
             cout << endl;
 
